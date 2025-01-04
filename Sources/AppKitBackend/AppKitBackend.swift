@@ -43,6 +43,8 @@ public struct AppKitBackend: AppBackend {
         let nsApp = NSApplication.shared
         nsApp.setActivationPolicy(.regular)
 
+        setMainMenuBar()
+
         return NSWindow(
             contentRect: NSRect(
                 x: 0,
@@ -79,6 +81,51 @@ public struct AppKitBackend: AppBackend {
 
     public func show(window: NSWindow) {
         window.makeKeyAndOrderFront(nil)
+    }
+
+    public func setMainMenuBar() {
+        autoreleasepool {
+            let mainMenubar = NSMenu()
+
+            let appName = ProcessInfo.processInfo.processName
+            let appMenu = NSMenu(title: appName)
+            appMenu.addItem(withTitle: "About \(appName)", action: #selector(NSApp.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+            appMenu.addItem(NSMenuItem.separator())
+
+            let hideMenu = appMenu.addItem(withTitle: "Hide \(appName)", action: #selector(NSApp.hide(_:)), keyEquivalent: "h")
+            hideMenu.keyEquivalentModifierMask = .command
+
+            let hideOthers = appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApp.hideOtherApplications(_:)), keyEquivalent: "h")
+            hideOthers.keyEquivalentModifierMask = [.option, .command]
+
+            appMenu.addItem(withTitle: "Show All", action: #selector(NSApp.unhideAllApplications(_:)), keyEquivalent: "")
+
+            let quitMenu = appMenu.addItem(withTitle: "Quit \(appName)", action: #selector(NSApp.terminate(_:)), keyEquivalent: "q")
+            quitMenu.keyEquivalentModifierMask = .command
+
+            let menuItem = NSMenuItem()
+            menuItem.submenu = appMenu
+            mainMenubar.addItem(menuItem)
+
+            let windowMenu = NSMenu(title: "Window")
+            let minimizeMenu = windowMenu.addItem(withTitle: "Minimize", action: #selector(NSApp.miniaturizeAll(_:)), keyEquivalent: "m")
+            minimizeMenu.keyEquivalentModifierMask = .command
+
+            windowMenu.addItem(withTitle: "Zoom", action: #selector(NSApp.setAccessibilityZoomButton(_:)), keyEquivalent: "")
+
+            let fullScreenMenu = windowMenu.addItem(withTitle: "Enter Full Screen", action: #selector(NSApp.setAccessibilityFullScreenButton(_:)), keyEquivalent: "f")
+            fullScreenMenu.keyEquivalentModifierMask = [.control, .command]
+
+            let closeMenu = windowMenu.addItem(withTitle: "Close", action: #selector(NSApp.setAccessibilityCloseButton(_:)), keyEquivalent: "w")
+            closeMenu.keyEquivalentModifierMask = .command
+
+            let windowItem = NSMenuItem()
+            windowItem.submenu = windowMenu
+            mainMenubar.addItem(windowItem)
+
+            NSApplication.shared.mainMenu = mainMenubar
+            NSApplication.shared.windowsMenu = windowMenu
+        }
     }
 
     public func runInMainThread(action: @escaping () -> Void) {
